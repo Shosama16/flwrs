@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine's Maze</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ffe6f2;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            align-items: flex-start; /* Align items to the top */
+        }
+        .left-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center items horizontally */
+            margin-right: 20px; /* Space between left content and maze */
+            width: 300px; /* Fixed width for the left column */
+        }
+        .message {
+            font-size: 20px;
+            font-weight: bold;
+            color: red;
+            visibility: hidden;
+            margin-bottom: 20px; /* Space below the message */
+            text-align: center; /* Center text */
+        }
+        .maze-container {
+            display: grid;
+            grid-template-columns: repeat(15, 40px);
+            grid-template-rows: repeat(15, 40px);
+            gap: 2px;
+            background-color: #ffd6e6;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px #ff99b6;
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 10px;
+        }
+        .wall {
+            background-color: #fc87aa;
+            border-radius: 5px;
+        }
+        .player {
+            background-color: #ffb3cc;
+            background-image: url('Woman.png');
+            background-size: cover;
+        }
+        .goal {
+            background-color: white;
+            background-image: url('heart.png');
+            background-size: cover;
+        }
+        .trap {
+            background-color: #ffb3b3;
+            background-image: url('Broken.png');
+            background-size: cover;
+        }
+        .jumbled-words {
+            font-size: 24px;
+            font-weight: bold;
+            color: red;
+            visibility: hidden;
+            text-align: center; /* Center text */
+            margin-bottom: 10px; /* Space below the jumbled words */
+        }
+        .input-box {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ff4d6d;
+            border-radius: 10px;
+            visibility: hidden;
+            width: 100%; /* Full width */
+            max-width: 300px; /* Limit width */
+        }
+        .hint-button {
+            margin-left: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #ff4d6d;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            visibility: hidden;
+        }
+        .instructions {
+            font-size: 16px;
+            color: #d6336c;
+            background-color: #ffccd5;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0 0 10px #ff99b6;
+        }
+        .instructions h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #ff4d6d;
+        }
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Content -->
+        <div class="left-content">
+            <div id="message" class="message">Luh, wag mong sadyain!!</div>
+            <div id="instructions" class="instructions">
+                <h3>How to Play:</h3>
+                <ul>
+                    <li>Read each messages CAREFULLY</li>
+                    <li>Use arrow keys to move.</li>
+                    <li>Avoid the broken heart 💔</li>
+                    <li>Reach the heart ❤️ to proceed.</li>
+                    <p>Happy playing, lovee!!</p>
+                </ul>
+            </div>
+            <div id="jumbled-words" class="jumbled-words"></div>
+            <input type="text" id="input-box" class="input-box" placeholder="Type the correct word here...">
+        </div>
+        <!-- Maze and Hint Button -->
+        <div class="maze-container" id="maze"></div>
+        <button id="hint-button" class="hint-button">Hint</button>
+    </div>
+    <script>
+        const mazeData = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,0,1,0,1,1,1,1,1,1,1,0,1],
+            [1,0,1,0,0,0,1,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,1,1,0,1,1,1,0,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+            [1,1,1,1,1,1,0,0,1,0,1,1,1,0,1],
+            [1,0,0,0,1,0,0,0,1,0,1,0,0,0,1],
+            [1,0,1,1,0,1,1,0,0,1,1,1,0,1,1],
+            [1,0,0,1,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,0,1,1,1,0,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        mazeData[7][7] = 0;
+        
+        const mazeContainer = document.getElementById("maze");
+        const messageElement = document.getElementById("message");
+        const jumbledWordsElement = document.getElementById("jumbled-words");
+        const hintButton = document.getElementById("hint-button");
+        const inputBox = document.getElementById("input-box");
+        let playerPosition = { x: 1, y: 7 };
+        const goalPosition = { x: 13, y: 13 };
+        const trapPosition = { x: 1, y: 1 };
+        const hiddenHeartPositions = [
+            { x: 5, y: 5 },
+            { x: 9, y: 9 }
+        ];
+        let foundHearts = 0;
+        let gameStage = 1; // 1: First heart (finish line), 2: Hidden hearts
+
+        function renderMaze() {
+            mazeContainer.innerHTML = "";
+            mazeData.forEach((row, y) => {
+                row.forEach((cell, x) => {
+                    const div = document.createElement("div");
+                    div.classList.add("cell");
+                    if (cell === 1) div.classList.add("wall");
+                    if (x === playerPosition.x && y === playerPosition.y) div.classList.add("player");
+                    if (gameStage === 1 && x === goalPosition.x && y === goalPosition.y) div.classList.add("goal");
+                    if (x === trapPosition.x && y === trapPosition.y) div.classList.add("trap");
+                    mazeContainer.appendChild(div);
+                });
+            });
+        }
+
+        function checkForHearts() {
+            if (gameStage === 1 && playerPosition.x === goalPosition.x && playerPosition.y === goalPosition.y) {
+                foundHearts++;
+                gameStage = 2; // Move to the next stage
+                alert("Now, find the last two hidden hearts in the maze! AHAHA");
+                hintButton.style.visibility = "visible"; // Show the hint button
+            } else if (gameStage === 2) {
+                hiddenHeartPositions.forEach((heart, index) => {
+                    if (playerPosition.x === heart.x && playerPosition.y === heart.y) {
+                        foundHearts++;
+                        hiddenHeartPositions.splice(index, 1); // Remove found heart
+                        if (foundHearts === 3) {
+                            alert("You found all the hearts!");
+                            jumbledWordsElement.style.visibility = "visible";
+                            inputBox.style.visibility = "visible";
+                            jumbleWord("FLOWERS");
+                        } else {
+                            alert(`You found a hidden heart! ${2 - hiddenHeartPositions.length} more to go!`);
+                        }
+                    }
+                });
+            }
+        }
+
+        function jumbleWord(word) {
+            const shuffled = word.split('').sort(() => Math.random() - 0.5).join('');
+            jumbledWordsElement.textContent = `Unscramble this word: ${shuffled}`;
+        }
+
+        inputBox.addEventListener("input", (event) => {
+            if (event.target.value.toUpperCase() === "FLOWERS") {
+                window.location.href = "index.html"; // Redirect to the next page
+            }
+        });
+
+        hintButton.addEventListener("click", () => {
+            alert("Find it yourself! HAHAHA");
+        });
+
+        document.addEventListener("keydown", (event) => {
+            const moves = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+            if (event.key in moves) {
+                const [dx, dy] = moves[event.key];
+                const newX = playerPosition.x + dx;
+                const newY = playerPosition.y + dy;
+                if (mazeData[newY][newX] !== 1) {
+                    playerPosition.x = newX;
+                    playerPosition.y = newY;
+                }
+                if (newX === trapPosition.x && newY === trapPosition.y) {
+                    messageElement.style.visibility = "visible";
+                    setTimeout(() => messageElement.style.visibility = "hidden", 2000);
+                    playerPosition = { x: 1, y: 7 };
+                }
+                checkForHearts();
+                renderMaze();
+            }
+        });
+
+        renderMaze();
+    </script>
+</body>
+</html>
